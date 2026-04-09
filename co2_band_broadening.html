@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CO₂ Infrared Band Broadening — Interactive Spectrum</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    color: #1a1a18;
+    padding: 24px 20px 32px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #1a1a18;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #5f5e5a;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+
+  .controls {
+    background: #f5f4f0;
+    border: 0.5px solid #d3d1c7;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+  }
+
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 7px 0;
+  }
+
+  .ctrl-label {
+    min-width: 170px;
+    font-size: 13px;
+    color: #444441;
+  }
+
+  .ctrl-val {
+    min-width: 64px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: #185fa5;
+  }
+
+  input[type=range] {
+    flex: 1;
+    height: 4px;
+    accent-color: #185fa5;
+    cursor: pointer;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    margin-bottom: 14px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    font-size: 12px;
+    color: #5f5e5a;
+    margin-bottom: 18px;
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .swatch {
+    display: inline-block;
+    width: 24px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  .swatch-box {
+    display: inline-block;
+    width: 18px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  .explainer {
+    background: #eaf3de;
+    border: 0.5px solid #97c459;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: #27500a;
+    line-height: 1.65;
+  }
+
+  .explainer h2 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #173404;
+  }
+
+  .explainer p { margin-bottom: 8px; }
+  .explainer p:last-child { margin-bottom: 0; }
+
+  .footer {
+    margin-top: 18px;
+    font-size: 11px;
+    color: #888780;
+    border-top: 0.5px solid #d3d1c7;
+    padding-top: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body { background: #1c1c1a; color: #c2c0b6; }
+    h1 { color: #e8e6dc; }
+    .subtitle { color: #888780; }
+    .controls { background: #2c2c2a; border-color: #444441; }
+    .ctrl-label { color: #b4b2a9; }
+    .ctrl-val { color: #85b7eb; }
+    .explainer { background: #1a2a10; border-color: #3b6d11; color: #c0dd97; }
+    .explainer h2 { color: #eaf3de; }
+    .footer { color: #5f5e5a; border-color: #444441; }
+  }
+</style>
+</head>
+<body>
+
+<h1>CO₂ Infrared Absorption Band Broadening</h1>
+<p class="subtitle">
+  Transmittance spectrum of CO₂ around the dominant 15 µm (667 cm⁻¹) greenhouse band.
+  Adjust concentration and pressure to see how the band widens as CO₂ increases.
+</p>
+
+<div class="controls">
+  <div class="ctrl-row">
+    <span class="ctrl-label">CO₂ concentration</span>
+    <input type="range" id="conc" min="1" max="6" step="0.05" value="2.5">
+    <span class="ctrl-val" id="concVal">420 ppm</span>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Atmospheric pressure</span>
+    <input type="range" id="pres" min="0.1" max="1" step="0.05" value="1">
+    <span class="ctrl-val" id="presVal">1.0 atm</span>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <canvas id="bband"></canvas>
+</div>
+
+<div class="legend">
+  <span><span class="swatch" style="background:#378add;"></span>Current CO₂ transmittance</span>
+  <span><span class="swatch" style="background:#85b7eb;border-top:1.5px dashed #378add;height:0;margin-top:1px;"></span>Pre-industrial baseline (280 ppm)</span>
+  <span><span class="swatch-box" style="background:rgba(224,75,74,0.15);border:1px dashed #e24b4a;"></span>Saturated core (≤5% transmittance)</span>
+  <span><span class="swatch-box" style="background:rgba(239,159,39,0.15);border:1px dashed #ef9f27;"></span>Active wing zone (unsaturated)</span>
+</div>
+
+<div class="explainer">
+  <h2>How to read this diagram</h2>
+  <p>
+    The <strong>blue curve</strong> shows CO₂ transmittance — where it dips to 0%, CO₂ absorbs all
+    infrared radiation at that wavenumber. The <strong>dashed curve</strong> shows the pre-industrial
+    baseline (280 ppm) for comparison.
+  </p>
+  <p>
+    The <strong>red zone</strong> at the band centre is already saturated — adding more CO₂ there
+    captures no additional radiation. However, the <strong>amber wing zones</strong> on either side
+    are not saturated. As CO₂ rises, these wings widen outward, absorbing wavelengths that were
+    previously transparent. This is why the greenhouse effect scales logarithmically — diminishing
+    returns, but never zero returns.
+  </p>
+  <p>
+    <strong>Pressure broadening</strong>: lower the pressure slider to simulate higher altitudes,
+    where fewer molecular collisions produce a narrower, sharper band.
+  </p>
+</div>
+
+<div class="footer">
+  CO₂ band broadening interactive — produced for LibreTexts climate science module.
+  Band shapes use Voigt profiles (Lorentzian + Gaussian convolution) centred at 667 cm⁻¹.
+  Chart.js 4.4.1 via cdnjs.cloudflare.com. No data is collected.
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+const textCol  = isDark ? '#c2c0b6' : '#3d3d3a';
+const gridCol  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+const lineCol  = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
+const bgCol    = isDark ? '#1c1c1a' : '#ffffff';
+
+const WN_MIN = 500, WN_MAX = 850, N = 700;
+const wns = [];
+for (let i = 0; i < N; i++) wns.push(WN_MIN + i * (WN_MAX - WN_MIN) / (N - 1));
+
+const CENTER   = 667;
+const PPM_REF  = 280;
+
+function voigt(wn, center, lorW, gaussW, depth) {
+  const dL = (wn - center) / lorW;
+  const dG = (wn - center) / gaussW;
+  return depth * (0.5 / (1 + dL * dL) + 0.5 * Math.exp(-dG * dG * 0.693));
+}
+
+function computeTrans(ppm, pressAtm) {
+  const logF   = Math.log(ppm / PPM_REF) / Math.log(2);
+  const coreW  = 10 + logF * 6;
+  const wingW  = 32 + logF * 18;
+  const extraW = 65 + logF * 30;
+
+  function lorW(w)  { return w * 0.6 * pressAtm + w * 0.4; }
+  function gauW(w)  { return w * 0.55; }
+
+  return wns.map(wn => {
+    let a = 0;
+    a += voigt(wn, CENTER,      lorW(coreW),  gauW(coreW),  1.0);
+    a += voigt(wn, CENTER,      lorW(wingW),  gauW(wingW),  0.55 + logF * 0.04);
+    a += voigt(wn, CENTER,      lorW(extraW), gauW(extraW), 0.25 + logF * 0.03);
+    const subBands = [
+      [CENTER - 14.7, 0.6, 0.38 + logF * 0.025],
+      [CENTER + 14.7, 0.6, 0.38 + logF * 0.025],
+      [CENTER - 28,   0.4, 0.22 + logF * 0.015],
+      [CENTER + 28,   0.4, 0.22 + logF * 0.015],
+      [CENTER - 44,   0.28, 0.14 + logF * 0.01],
+      [CENTER + 44,   0.28, 0.14 + logF * 0.01],
+      [CENTER - 62,   0.18, 0.08],
+      [CENTER + 62,   0.18, 0.08],
+    ];
+    for (const [c, f, d] of subBands) {
+      a += voigt(wn, c, lorW(coreW * f), gauW(coreW * f), d);
+    }
+    return Math.round((1 - Math.min(1, Math.max(0, a))) * 1000) / 10;
+  });
+}
+
+function ppmFromSlider(v) {
+  return Math.round(PPM_REF * Math.pow(2, parseFloat(v) - 2));
+}
+
+const preIndTrans = computeTrans(280, 1.0);
+let currentTrans  = computeTrans(420, 1.0);
+
+const chart = new Chart(document.getElementById('bband'), {
+  type: 'line',
+  data: {
+    labels: wns.map(w => Math.round(w * 10) / 10),
+    datasets: [
+      {
+        label: 'Pre-industrial 280 ppm',
+        data: preIndTrans,
+        borderColor: 'rgba(133,183,235,0.65)',
+        borderWidth: 1.2,
+        borderDash: [4, 3],
+        pointRadius: 0,
+        tension: 0.2,
+        fill: false,
+        yAxisID: 'y',
+        order: 2
+      },
+      {
+        label: 'Current',
+        data: currentTrans,
+        borderColor: '#378add',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.2,
+        fill: false,
+        yAxisID: 'y',
+        order: 1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 120 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: isDark ? '#2c2c2a' : '#ffffff',
+        titleColor: textCol,
+        bodyColor: textCol,
+        borderColor: lineCol,
+        borderWidth: 0.5,
+        callbacks: {
+          title: items => {
+            const wn = parseFloat(items[0].label);
+            return `${wn.toFixed(0)} cm⁻¹  (${(10000 / wn).toFixed(1)} µm)`;
+          },
+          label: item => {
+            if (item.datasetIndex === 0) return `Pre-industrial (280 ppm): ${item.raw}% transmittance`;
+            return `Current (${ppmFromSlider(document.getElementById('conc').value)} ppm): ${item.raw}% transmittance`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        min: WN_MIN,
+        max: WN_MAX,
+        reverse: true,
+        title: {
+          display: true,
+          text: 'Wavenumber (cm⁻¹)  —  high left, low right (FTIR convention)',
+          color: textCol,
+          font: { size: 11 }
+        },
+        ticks: { color: textCol, maxTicksLimit: 12, font: { size: 11 } },
+        grid: { color: gridCol },
+        border: { color: lineCol }
+      },
+      y: {
+        position: 'left',
+        min: 0,
+        max: 105,
+        title: {
+          display: true,
+          text: 'Transmittance (%)',
+          color: textCol,
+          font: { size: 11 }
+        },
+        ticks: { color: textCol, callback: v => v + '%', font: { size: 11 } },
+        grid: { color: gridCol },
+        border: { color: lineCol }
+      }
+    }
+  },
+  plugins: [{
+    id: 'zones',
+    beforeDraw(chart) {
+      const { ctx, chartArea: { left, right, top, bottom }, scales: { x, y } } = chart;
+      ctx.save();
+
+      const ppm  = ppmFromSlider(document.getElementById('conc').value);
+      const pres = parseFloat(document.getElementById('pres').value);
+      const logF = Math.log(ppm / 280) / Math.log(2);
+      const satHalfW  = Math.min(50,  (10 + logF * 6)  * (1 + pres * 0.3) * 0.9);
+      const wingHalfW = Math.min(110, (32 + logF * 18) * (1 + pres * 0.3) * 1.6);
+
+      const cL = x.getPixelForValue(CENTER + satHalfW);
+      const cR = x.getPixelForValue(CENTER - satHalfW);
+      const wL = x.getPixelForValue(CENTER + wingHalfW);
+      const wR = x.getPixelForValue(CENTER - wingHalfW);
+
+      ctx.fillStyle = isDark ? 'rgba(239,159,39,0.09)' : 'rgba(239,159,39,0.10)';
+      if (wL < cL) ctx.fillRect(wL, top, cL - wL, bottom - top);
+      if (wR > cR) ctx.fillRect(cR, top, wR - cR, bottom - top);
+
+      ctx.fillStyle = isDark ? 'rgba(224,75,74,0.12)' : 'rgba(224,75,74,0.10)';
+      ctx.fillRect(cL, top, cR - cL, bottom - top);
+      ctx.strokeStyle = isDark ? 'rgba(224,75,74,0.45)' : 'rgba(163,45,45,0.40)';
+      ctx.setLineDash([3, 2]); ctx.lineWidth = 0.7;
+      ctx.strokeRect(cL, top, cR - cL, bottom - top);
+      ctx.setLineDash([]);
+
+      const cPx = x.getPixelForValue(CENTER);
+      ctx.strokeStyle = isDark ? 'rgba(133,183,235,0.55)' : 'rgba(21,95,165,0.45)';
+      ctx.lineWidth = 0.7; ctx.setLineDash([5, 3]);
+      ctx.beginPath(); ctx.moveTo(cPx, top); ctx.lineTo(cPx, bottom); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.font = '500 10px sans-serif';
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = isDark ? '#85b7eb' : '#0c447c';
+      ctx.fillText('667 cm⁻¹ centre', cPx, top + 13);
+
+      ctx.fillStyle = isDark ? 'rgba(224,75,74,0.9)' : '#791f1f';
+      ctx.fillText('saturated core', x.getPixelForValue(CENTER), top + 27);
+      ctx.fillText('(≤5% transmittance)', x.getPixelForValue(CENTER), top + 39);
+
+      const wMidL = wL + (cL - wL) / 2;
+      const wMidR = cR + (wR - cR) / 2;
+      ctx.fillStyle = isDark ? 'rgba(239,159,39,0.9)' : '#633806';
+      if (cL - wL > 50) { ctx.fillText('active wings', wMidL, top + 27); ctx.fillText('(unsaturated)', wMidL, top + 39); }
+      if (wR - cR > 50) { ctx.fillText('active wings', wMidR, top + 27); ctx.fillText('(unsaturated)', wMidR, top + 39); }
+
+      ctx.fillStyle = isDark ? 'rgba(55,138,221,0.75)' : 'rgba(12,68,124,0.75)';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('← wings widen as CO₂ rises →', right - 4, y.getPixelForValue(3) - 4);
+
+      ctx.restore();
+    }
+  }]
+});
+
+function update() {
+  const sv  = document.getElementById('conc').value;
+  const pv  = parseFloat(document.getElementById('pres').value);
+  const ppm = ppmFromSlider(sv);
+  document.getElementById('concVal').textContent = ppm + ' ppm';
+  document.getElementById('presVal').textContent = pv.toFixed(1) + ' atm';
+  chart.data.datasets[1].data = computeTrans(ppm, pv);
+  chart.update('none');
+}
+
+document.getElementById('conc').addEventListener('input', update);
+document.getElementById('pres').addEventListener('input', update);
+update();
+</script>
+</body>
+</html>
